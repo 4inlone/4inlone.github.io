@@ -1,0 +1,127 @@
+﻿<!DOCTYPE html>
+<html lang="ZH">
+<head>
+    <meta charset="GBK">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>排班表</title>
+   <style>
+        .calendar{
+            text-align: center;	
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        .status {
+            height: 10px;
+        }
+        .free{
+            background-color: green;
+        }
+        .busy{
+            background-color: yellow;
+        }
+        .passed {
+            background-color: gray;
+        }
+    </style>
+</head>
+<body>
+    <h1>排班表</h1>
+   <label for="dateStatus">今日排班状态：</label>
+   <select id="dateStatus">
+       <option value="0">工作1</option>
+       <option value="1">工作2</option>
+       <option value="2">休班1</option>
+       <option value="3">休班2</option>
+    </select>
+   <br>
+   <label for="targetDate">查询指定月份：</label>
+   <select id="optYear">
+       <option value="2024" selected>2024</option>
+       <option value="2025">2025</option>
+       <option value="2026">2026</option>
+       <option value="2027">2027</option>
+       <option value="2028">2028</option>
+       <option value="2029">2029</option>
+       <option value="2030">2030</option>
+    </select>
+    <select id="optMonth">
+       <option value="0" selected>1月</option>
+       <option value="1">2月</option>
+       <option value="2">3月</option>
+       <option value="3">4月</option>
+       <option value="4">5月</option>
+       <option value="5">6月</option>
+       <option value="6">7月</option>
+       <option value="7">8月</option>
+       <option value="8">9月</option>
+       <option value="9">10月</option>
+       <option value="10">11月</option>
+       <option value="11">12月</option>
+    </select>
+   <button onclick="changeMonth()">查询</button>
+   <div id="calendar"></div>
+   <script>
+        dateStatus = document.getElementById('dateStatus');
+        targetDate = document.getElementById('targetDate');
+        currentDate = new Date();
+        function daysBetween(date1,date2){
+            date1.setHours(0,0,0,0);
+            date2.setHours(0,0,0,0);
+            return Math.ceil((date1 - date2)/(24*60*60*1000));   
+        }
+        function generateCalendar(year,month) {
+            const calendarDiv = document.getElementById('calendar');
+            calendarDiv.innerHTML = '';
+            table =`<label width="100%" align = "center">${year}年${month+1}月</label>`
+            table +=`<table><thead><tr><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr></thead><tbody>`;
+            date = new Date(year, month, 1);
+            daysInMonth = new Date(year, month+1, 0).getDate();
+            tmpDayOfWeek = date.getDay();
+            dayCounter = 1;
+            dayOfWeek = (tmpDayOfWeek >= 0) ? tmpDayOfWeek-1 : 6 ;
+            for (let i = 0; i < 6; i++) {
+                table += '<tr>';
+                for (let j = 0; j < 7; j++) {
+                    if (i === 0 && j < dayOfWeek) {
+                        table += '<td></td>';
+                    } else if (dayCounter > daysInMonth) {
+                        break;
+                    } else {
+                        tmpDate = new Date(year, month, dayCounter);
+                        daysDiff = daysBetween(tmpDate,currentDate);
+                        if(daysDiff < 0){
+                        	dayStats = 'passed';
+                        }else{
+                        	workStats = (parseInt(daysDiff) + parseInt(document.getElementById('dateStatus').value)) % 4;
+                        	dayStats = workStats > 1 ? 'free' : 'busy';
+                        }
+                        table += `<td>${dayCounter}<div class="status ${dayStats}"></div></td>`;
+                        dayCounter++;
+                    }
+                }
+                table += '</tr>';
+            }
+
+            table += '</tbody></table>';
+            calendarDiv.innerHTML = table;
+        }
+
+        function changeMonth() {
+            year = parseInt(document.getElementById('optYear').value);
+            month = parseInt(document.getElementById('optMonth').value);
+            optDate = new Date(year, month);
+            generateCalendar(optDate.getFullYear(),optDate.getMonth());
+        }
+        dateStatus.addEventListener("change", () => {
+            generateCalendar(currentDate.getFullYear(),currentDate.getMonth())
+        });
+    </script>
+</body>
+</html>
