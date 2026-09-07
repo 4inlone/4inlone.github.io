@@ -1,12 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ZH">
 <head>
     <meta charset="GBK">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>排班表</title>
-   <style>
-        .calendar{
-            text-align: center;	
+    <title>排班表</title>
+    <style>
+        .calendar {
+            text-align: center;
         }
         table {
             border-collapse: collapse;
@@ -20,10 +20,10 @@
         .status {
             height: 10px;
         }
-        .free{
+        .free {
             background-color: green;
         }
-        .busy{
+        .busy {
             background-color: yellow;
         }
         .passed {
@@ -33,95 +33,130 @@
 </head>
 <body>
     <h1>排班表</h1>
-   <label for="dateStatus">今日排班状态：</label>
-   <select id="dateStatus">
-       <option value="0">工作1</option>
-       <option value="1">工作2</option>
-       <option value="2">休班1</option>
-       <option value="3">休班2</option>
+    <label for="shiftStatus">今日排班状态：</label>
+    <select id="shiftStatus">
+        <option value="0">日班</option>
+        <option value="1">日班</option>
+        <option value="2">休班</option>
+        <option value="3">全班</option>
+        <option value="4">休班</option>
+        <option value="5">休班</option>
     </select>
-   <br>
-   <label for="targetDate">查询指定月份：</label>
-   <select id="optYear">
-       <option value="2024" selected>2024</option>
-       <option value="2025">2025</option>
-       <option value="2026">2026</option>
-       <option value="2027">2027</option>
-       <option value="2028">2028</option>
-       <option value="2029">2029</option>
-       <option value="2030">2030</option>
+    <br>
+    <label for="optYear">查询指定月份：</label>
+    <select id="optYear">
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026" selected>2026</option>
+        <option value="2027">2027</option>
+        <option value="2028">2028</option>
+        <option value="2029">2029</option>
+        <option value="2030">2030</option>
     </select>
     <select id="optMonth">
-       <option value="0" selected>1月</option>
-       <option value="1">2月</option>
-       <option value="2">3月</option>
-       <option value="3">4月</option>
-       <option value="4">5月</option>
-       <option value="5">6月</option>
-       <option value="6">7月</option>
-       <option value="7">8月</option>
-       <option value="8">9月</option>
-       <option value="9">10月</option>
-       <option value="10">11月</option>
-       <option value="11">12月</option>
+        <option value="0">1月</option>
+        <option value="1">2月</option>
+        <option value="2">3月</option>
+        <option value="3">4月</option>
+        <option value="4">5月</option>
+        <option value="5">6月</option>
+        <option value="6">7月</option>
+        <option value="7">8月</option>
+        <option value="8">9月</option>
+        <option value="9">10月</option>
+        <option value="10">11月</option>
+        <option value="11">12月</option>
     </select>
-   <button onclick="changeMonth()">查询</button>
-   <div id="calendar"></div>
-   <script>
-        dateStatus = document.getElementById('dateStatus');
-        targetDate = document.getElementById('targetDate');
-        currentDate = new Date();
-        function daysBetween(date1,date2){
-            date1.setHours(0,0,0,0);
-            date2.setHours(0,0,0,0);
-            return Math.ceil((date1 - date2)/(24*60*60*1000));   
+    <button onclick="changeMonth()">查询</button>
+    <div id="calendar"></div>
+
+    <script>
+        // 当前显示的年份和月份（用于状态变更时刷新）
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth();
+
+        const shiftStatusSelect = document.getElementById('shiftStatus');
+
+        // 计算两个日期之间的天数差（基于本地日期，忽略时间）
+        function daysBetween(date1, date2) {
+            const d1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
+            const d2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
+            return Math.floor((d1 - d2) / (24 * 60 * 60 * 1000));
         }
-        function generateCalendar(year,month) {
+
+        // 生成日历
+        function generateCalendar(year, month) {
             const calendarDiv = document.getElementById('calendar');
             calendarDiv.innerHTML = '';
-            table =`<label width="100%" align = "center">${year}年${month+1}月</label>`
-            table +=`<table><thead><tr><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr></thead><tbody>`;
-            date = new Date(year, month, 1);
-            daysInMonth = new Date(year, month+1, 0).getDate();
-            tmpDayOfWeek = date.getDay();
-            dayCounter = 1;
-            dayOfWeek = (tmpDayOfWeek >= 0) ? tmpDayOfWeek-1 : 6 ;
+
+            let table = `<div style="font-weight:bold; margin-bottom:8px;">${year}年${month+1}月</div>`;
+            table += `<table><thead><tr><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr></thead><tbody>`;
+
+            const date = new Date(year, month, 1);
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            let dayOfWeek = date.getDay(); // 0=周日, 1=周一...
+            // 转为周一为一周第一天：若周日则索引6，否则减1
+            let firstDayIndex = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
+
+            let dayCounter = 1;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // 用于比较
+
             for (let i = 0; i < 6; i++) {
                 table += '<tr>';
                 for (let j = 0; j < 7; j++) {
-                    if (i === 0 && j < dayOfWeek) {
+                    if (i === 0 && j < firstDayIndex) {
                         table += '<td></td>';
                     } else if (dayCounter > daysInMonth) {
-                        break;
+                        // 剩余格子留空（不跳出，继续填充空）
+                        table += '<td></td>';
                     } else {
-                        tmpDate = new Date(year, month, dayCounter);
-                        daysDiff = daysBetween(tmpDate,currentDate);
-                        if(daysDiff < 0){
-                        	dayStats = 'passed';
-                        }else{
-                        	workStats = (parseInt(daysDiff) + parseInt(document.getElementById('dateStatus').value)) % 4;
-                        	dayStats = workStats > 1 ? 'free' : 'busy';
+                        const tmpDate = new Date(year, month, dayCounter);
+                        const daysDiff = daysBetween(tmpDate, today);
+                        let dayStats;
+                        if (daysDiff < 0) {
+                            dayStats = 'passed';
+                        } else {
+                            // 新的6天循环：0,1=日班(工作), 2=休班, 3=全班(工作), 4,5=休班
+                            const shiftVal = (daysDiff + parseInt(shiftStatusSelect.value)) % 6;
+                            dayStats = (shiftVal === 0 || shiftVal === 1 || shiftVal === 3) ? 'busy' : 'free';
                         }
                         table += `<td>${dayCounter}<div class="status ${dayStats}"></div></td>`;
                         dayCounter++;
                     }
                 }
                 table += '</tr>';
+                if (dayCounter > daysInMonth) break; // 所有日期已生成，退出循环
             }
 
             table += '</tbody></table>';
             calendarDiv.innerHTML = table;
         }
 
+        // 切换月份（用户点击查询）
         function changeMonth() {
-            year = parseInt(document.getElementById('optYear').value);
-            month = parseInt(document.getElementById('optMonth').value);
-            optDate = new Date(year, month);
-            generateCalendar(optDate.getFullYear(),optDate.getMonth());
+            const year = parseInt(document.getElementById('optYear').value);
+            const month = parseInt(document.getElementById('optMonth').value);
+            currentYear = year;
+            currentMonth = month;
+            generateCalendar(year, month);
         }
-        dateStatus.addEventListener("change", () => {
-            generateCalendar(currentDate.getFullYear(),currentDate.getMonth())
+
+        // 监听排班状态变化，刷新当前显示的月份
+        shiftStatusSelect.addEventListener('change', function() {
+            generateCalendar(currentYear, currentMonth);
         });
+
+        // 初始化：默认显示当前月份
+        (function init() {
+            const now = new Date();
+            currentYear = now.getFullYear();
+            currentMonth = now.getMonth();
+            // 设置下拉框默认值（方便用户确认）
+            document.getElementById('optYear').value = currentYear;
+            document.getElementById('optMonth').value = currentMonth;
+            generateCalendar(currentYear, currentMonth);
+        })();
     </script>
 </body>
 </html>
