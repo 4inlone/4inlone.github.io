@@ -2,161 +2,320 @@
 <html lang="ZH">
 <head>
     <meta charset="GBK">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>排班表</title>
     <style>
-        .calendar {
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f7fa;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            padding: 20px 16px 24px;
+        }
+        h1 {
+            font-size: 24px;
             text-align: center;
+            color: #263238;
+            margin-bottom: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .description {
+            background: #e3f2fd;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #0d47a1;
+            margin-bottom: 16px;
+            text-align: center;
+            line-height: 1.5;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 8px;
+            margin-bottom: 16px;
+        }
+        .controls label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #37474f;
+            white-space: nowrap;
+        }
+        .controls select,
+        .controls button {
+            font-size: 15px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid #cfd8dc;
+            background: #fff;
+            color: #263238;
+            min-height: 44px;
+            flex: 1 1 auto;
+            min-width: 80px;
+        }
+        .controls button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex: 0 0 auto;
+            padding: 8px 20px;
+        }
+        .controls button:active {
+            background: #0d47a1;
+        }
+        .controls select:focus,
+        .controls button:focus {
+            outline: 2px solid #64b5f6;
+            outline-offset: 2px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin: 12px 0 16px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #37474f;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 1px solid rgba(0,0,0,0.06);
+            flex-shrink: 0;
+        }
+        .legend-color.busy { background: #f9a825; }
+        .legend-color.free { background: #66bb6a; }
+        .legend-color.passed { background: #cfd8dc; }
+        .legend-color.full { background: #3949ab; }
+
+        .calendar-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 6px;
+        }
+        .calendar-title {
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            color: #263238;
+            margin-bottom: 8px;
         }
         table {
-            border-collapse: collapse;
             width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            min-width: 280px;
         }
         th, td {
-            border: 1px solid black;
-            padding: 8px;
+            border: 1px solid #e0e0e0;
             text-align: center;
+            vertical-align: middle;
+            padding: 6px 2px;
+            font-size: 14px;
         }
-        .status {
-            height: 10px;
+        th {
+            background: #eceff1;
+            color: #455a64;
+            font-weight: 600;
+            padding: 8px 2px;
         }
-        .free {
-            background-color: green;
+        td {
+            height: 60px;
+            background-color: #ffffff;
+            position: relative;
         }
-        .busy {
-            background-color: yellow;
+        td .day-number {
+            display: block;
+            font-size: 16px;
+            font-weight: 500;
+            color: #263238;
+            line-height: 1.2;
         }
-        .passed {
-            background-color: gray;
+        td .status {
+            height: 8px;
+            width: 70%;
+            margin: 4px auto 0;
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+        td .status.free { background: #66bb6a; }
+        td .status.busy { background: #f9a825; }
+        td .status.passed { background: #cfd8dc; }
+        td .status.full { background: #3949ab; }
+
+        td:empty {
+            background: #fafafa;
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 12px 10px; }
+            h1 { font-size: 20px; }
+            .controls label { font-size: 13px; }
+            .controls select, .controls button { font-size: 14px; padding: 6px 10px; min-height: 40px; }
+            td { height: 52px; padding: 4px 2px; }
+            td .day-number { font-size: 14px; }
+            td .status { height: 6px; width: 60%; }
+            .legend-item { font-size: 12px; }
+            .legend-color { width: 16px; height: 16px; }
+            .calendar-title { font-size: 16px; }
         }
     </style>
 </head>
 <body>
+<div class="container">
     <h1>排班表</h1>
-    <label for="shiftStatus">今日排班状态：</label>
-    <select id="shiftStatus">
-        <option value="0">日班</option>
-        <option value="1">日班</option>
-        <option value="2">休班</option>
-        <option value="3">全班</option>
-        <option value="4">休班</option>
-        <option value="5">休班</option>
-    </select>
-    <br>
-    <label for="optYear">查询指定月份：</label>
-    <select id="optYear">
-        <option value="2024">2024</option>
-        <option value="2025">2025</option>
-        <option value="2026" selected>2026</option>
-        <option value="2027">2027</option>
-        <option value="2028">2028</option>
-        <option value="2029">2029</option>
-        <option value="2030">2030</option>
-    </select>
-    <select id="optMonth">
-        <option value="0">1月</option>
-        <option value="1">2月</option>
-        <option value="2">3月</option>
-        <option value="3">4月</option>
-        <option value="4">5月</option>
-        <option value="5">6月</option>
-        <option value="6">7月</option>
-        <option value="7">8月</option>
-        <option value="8">9月</option>
-        <option value="9">10月</option>
-        <option value="10">11月</option>
-        <option value="11">12月</option>
-    </select>
-    <button onclick="changeMonth()">查询</button>
-    <div id="calendar"></div>
 
-    <script>
-        // 当前显示的年份和月份（用于状态变更时刷新）
-        let currentYear = new Date().getFullYear();
-        let currentMonth = new Date().getMonth();
+    <div class="description">
+        选择今日的排班状态，系统将自动推算未来所有日期的排班。
+    </div>
 
-        const shiftStatusSelect = document.getElementById('shiftStatus');
+    <div class="controls">
+        <label for="shiftStatus">今日状态：</label>
+        <select id="shiftStatus">
+            <option value="0">日班 (DAY1)</option>
+            <option value="1">日班 (DAY2)</option>
+            <option value="2">休班 (DAY3)</option>
+            <option value="3">全班 (DAY4)</option>
+            <option value="4">休班 (DAY5)</option>
+            <option value="5">休班 (DAY6)</option>
+        </select>
+        <div style="width:100%; display:flex; gap:6px; margin-top:4px;">
+            <label for="optYear" style="flex:0 0 auto;">查询：</label>
+            <select id="optYear" style="flex:1;">
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+                <option value="2029">2029</option>
+                <option value="2030">2030</option>
+            </select>
+            <select id="optMonth" style="flex:1;">
+                <option value="0">1月</option><option value="1">2月</option><option value="2">3月</option>
+                <option value="3">4月</option><option value="4">5月</option><option value="5">6月</option>
+                <option value="6">7月</option><option value="7">8月</option><option value="8">9月</option>
+                <option value="9">10月</option><option value="10">11月</option><option value="11">12月</option>
+            </select>
+            <button onclick="changeMonth()">查询</button>
+        </div>
+    </div>
 
-        // 计算两个日期之间的天数差（基于本地日期，忽略时间）
-        function daysBetween(date1, date2) {
-            const d1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
-            const d2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
-            return Math.floor((d1 - d2) / (24 * 60 * 60 * 1000));
-        }
+    <div class="legend">
+        <span class="legend-item"><span class="legend-color busy"></span> 日班</span>
+        <span class="legend-item"><span class="legend-color full"></span> 全班</span>
+        <span class="legend-item"><span class="legend-color free"></span> 休班</span>
+        <span class="legend-item"><span class="legend-color passed"></span> 历史</span>
+    </div>
 
-        // 生成日历
-        function generateCalendar(year, month) {
-            const calendarDiv = document.getElementById('calendar');
-            calendarDiv.innerHTML = '';
+    <div id="calendar" class="calendar-wrap"></div>
+</div>
 
-            let table = `<div style="font-weight:bold; margin-bottom:8px;">${year}年${month+1}月</div>`;
-            table += `<table><thead><tr><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr></thead><tbody>`;
+<script>
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
 
-            const date = new Date(year, month, 1);
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            let dayOfWeek = date.getDay(); // 0=周日, 1=周一...
-            // 转为周一为一周第一天：若周日则索引6，否则减1
-            let firstDayIndex = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
+    const shiftStatusSelect = document.getElementById('shiftStatus');
 
-            let dayCounter = 1;
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // 用于比较
+    function daysBetween(date1, date2) {
+        const d1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
+        const d2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
+        return Math.floor((d1 - d2) / (24 * 60 * 60 * 1000));
+    }
 
-            for (let i = 0; i < 6; i++) {
-                table += '<tr>';
-                for (let j = 0; j < 7; j++) {
-                    if (i === 0 && j < firstDayIndex) {
-                        table += '<td></td>';
-                    } else if (dayCounter > daysInMonth) {
-                        // 剩余格子留空（不跳出，继续填充空）
-                        table += '<td></td>';
+    function generateCalendar(year, month) {
+        const calendarDiv = document.getElementById('calendar');
+        calendarDiv.innerHTML = '';
+
+        let html = `<div class="calendar-title">${year}年${month+1}月</div>`;
+        html += `<table><thead><tr><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr></thead><tbody>`;
+
+        const date = new Date(year, month, 1);
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        let dayOfWeek = date.getDay();
+        let firstDayIndex = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
+
+        let dayCounter = 1;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (let i = 0; i < 6; i++) {
+            html += '<tr>';
+            for (let j = 0; j < 7; j++) {
+                if (i === 0 && j < firstDayIndex) {
+                    html += '<td></td>';
+                } else if (dayCounter > daysInMonth) {
+                    html += '<td></td>';
+                } else {
+                    const tmpDate = new Date(year, month, dayCounter);
+                    const daysDiff = daysBetween(tmpDate, today);
+                    let dayStats;
+                    if (daysDiff < 0) {
+                        dayStats = 'passed';
                     } else {
-                        const tmpDate = new Date(year, month, dayCounter);
-                        const daysDiff = daysBetween(tmpDate, today);
-                        let dayStats;
-                        if (daysDiff < 0) {
-                            dayStats = 'passed';
+                        const shiftVal = (daysDiff + parseInt(shiftStatusSelect.value)) % 6;
+                        if (shiftVal === 3) {
+                            dayStats = 'full';
+                        } else if (shiftVal === 0 || shiftVal === 1) {
+                            dayStats = 'busy';
                         } else {
-                            // 新的6天循环：0,1=日班(工作), 2=休班, 3=全班(工作), 4,5=休班
-                            const shiftVal = (daysDiff + parseInt(shiftStatusSelect.value)) % 6;
-                            dayStats = (shiftVal === 0 || shiftVal === 1 || shiftVal === 3) ? 'busy' : 'free';
+                            dayStats = 'free';
                         }
-                        table += `<td>${dayCounter}<div class="status ${dayStats}"></div></td>`;
-                        dayCounter++;
                     }
+                    html += `<td><span class="day-number">${dayCounter}</span><div class="status ${dayStats}"></div></td>`;
+                    dayCounter++;
                 }
-                table += '</tr>';
-                if (dayCounter > daysInMonth) break; // 所有日期已生成，退出循环
             }
-
-            table += '</tbody></table>';
-            calendarDiv.innerHTML = table;
+            html += '</tr>';
+            if (dayCounter > daysInMonth) break;
         }
 
-        // 切换月份（用户点击查询）
-        function changeMonth() {
-            const year = parseInt(document.getElementById('optYear').value);
-            const month = parseInt(document.getElementById('optMonth').value);
-            currentYear = year;
-            currentMonth = month;
-            generateCalendar(year, month);
-        }
+        html += '</tbody></table>';
+        calendarDiv.innerHTML = html;
+    }
 
-        // 监听排班状态变化，刷新当前显示的月份
-        shiftStatusSelect.addEventListener('change', function() {
-            generateCalendar(currentYear, currentMonth);
-        });
+    function changeMonth() {
+        const year = parseInt(document.getElementById('optYear').value);
+        const month = parseInt(document.getElementById('optMonth').value);
+        currentYear = year;
+        currentMonth = month;
+        generateCalendar(year, month);
+    }
 
-        // 初始化：默认显示当前月份
-        (function init() {
-            const now = new Date();
-            currentYear = now.getFullYear();
-            currentMonth = now.getMonth();
-            // 设置下拉框默认值（方便用户确认）
-            document.getElementById('optYear').value = currentYear;
-            document.getElementById('optMonth').value = currentMonth;
-            generateCalendar(currentYear, currentMonth);
-        })();
-    </script>
+    shiftStatusSelect.addEventListener('change', function() {
+        generateCalendar(currentYear, currentMonth);
+    });
+
+    (function init() {
+        const now = new Date();
+        currentYear = now.getFullYear();
+        currentMonth = now.getMonth();
+        document.getElementById('optYear').value = currentYear;
+        document.getElementById('optMonth').value = currentMonth;
+        generateCalendar(currentYear, currentMonth);
+    })();
+</script>
 </body>
 </html>
